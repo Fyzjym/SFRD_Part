@@ -1,6 +1,5 @@
 # Description
-This repository is used to showcase the code details of Paper A. More details will be released after the paper is accepted.
-
+SFRD: Handwritten Mathematical Expressions Generation by Spatial-Aware Feature Refinement Diffusion
 
 # Methodology
 
