@@ -61,14 +61,16 @@ class Trainer:
         
        
         # predicted_noise, high_nce_emb, low_nce_emb = self.model(x_t, t, style_ref, laplace_ref, content_ref, tag='train')
-        predicted_noise, low_nce_emb = self.model(x_t, t, style_ref, laplace_ref, content_ref, tag='train')
+        # predicted_noise, low_nce_emb = self.model(x_t, t, style_ref, laplace_ref, content_ref, tag='train')
+        predicted_noise = self.model(x_t, t, style_ref, laplace_ref, content_ref, tag='train')
 
         # calculate loss
         recon_loss = self.recon_criterion(predicted_noise, noise)
         # high_nce_loss = self.nce_criterion(high_nce_emb, labels=wid)
-        low_nce_loss = self.nce_criterion(low_nce_emb, labels=wid)
+        # low_nce_loss = self.nce_criterion(low_nce_emb, labels=wid)
         # loss = recon_loss + high_nce_loss + low_nce_loss
-        loss = recon_loss + low_nce_loss
+        # loss = recon_loss + low_nce_loss
+        loss = recon_loss 
 
         # backward and update trainable parameters
         self.optimizer.zero_grad()
@@ -79,63 +81,65 @@ class Trainer:
             # log file
             # loss_dict = {"reconstruct_loss": recon_loss.item(), "high_nce_loss": high_nce_loss.item(),
             #              "low_nce_loss": low_nce_loss.item()}
-            loss_dict = {"reconstruct_loss": recon_loss.item(),
-                         "low_nce_loss": low_nce_loss.item()}
+            # loss_dict = {"reconstruct_loss": recon_loss.item(),
+            #              "low_nce_loss": low_nce_loss.item()}
+            loss_dict = {"reconstruct_loss": recon_loss.item()
+                         }
             self.tb_summary.add_scalars("loss", loss_dict, step)
             self._progress(recon_loss.item(), pbar)
 
         # del data, loss
         # torch.cuda.empty_cache()
 
-    def _finetune_iter(self, data, step, pbar):
-        self.model.train()
-        # prepare input
+    # def _finetune_iter(self, data, step, pbar):
+    #     self.model.train()
+    #     # prepare input
 
-        images, style_ref, laplace_ref, content_ref, wid, target, target_lengths = data['img'].to(self.device), \
-            data['style'].to(self.device), \
-            data['laplace'].to(self.device), \
-            data['content'].to(self.device), \
-            data['wid'].to(self.device), \
-            data['target'].to(self.device), \
-            data['target_lengths'].to(self.device)
+    #     images, style_ref, laplace_ref, content_ref, wid, target, target_lengths = data['img'].to(self.device), \
+    #         data['style'].to(self.device), \
+    #         data['laplace'].to(self.device), \
+    #         data['content'].to(self.device), \
+    #         data['wid'].to(self.device), \
+    #         data['target'].to(self.device), \
+    #         data['target_lengths'].to(self.device)
         
-        # vae encode
-        latent_images = self.vae.encode(images).latent_dist.sample()
-        latent_images = latent_images * 0.18215
+    #     # vae encode
+    #     latent_images = self.vae.encode(images).latent_dist.sample()
+    #     latent_images = latent_images * 0.18215
 
 
-        # forward
-        t = self.diffusion.sample_timesteps(latent_images.shape[0], finetune=True).to(self.device)
-        x_t, noise = self.diffusion.noise_images(latent_images, t)
+    #     # forward
+    #     t = self.diffusion.sample_timesteps(latent_images.shape[0], finetune=True).to(self.device)
+    #     x_t, noise = self.diffusion.noise_images(latent_images, t)
         
-        x_start, predicted_noise, high_nce_emb, low_nce_emb = self.diffusion.train_ddim(self.model, x_t, style_ref, laplace_ref,
-                                                        content_ref, t, sampling_timesteps=5)
+    #     x_start, predicted_noise, high_nce_emb, low_nce_emb = self.diffusion.train_ddim(self.model, x_t, style_ref, laplace_ref,
+    #                                                     content_ref, t, sampling_timesteps=5)
  
-        # calculate loss
-        recon_loss = self.recon_criterion(predicted_noise, noise)
-        rec_out = self.ocr_model(x_start)
-        input_lengths = torch.IntTensor(x_start.shape[0]*[rec_out.shape[0]])
-        ctc_loss = self.ctc_criterion(F.log_softmax(rec_out, dim=2), target, input_lengths, target_lengths)
-        high_nce_loss = self.nce_criterion(high_nce_emb, labels=wid)
-        low_nce_loss = self.nce_criterion(low_nce_emb, labels=wid)
-        loss = recon_loss + high_nce_loss + low_nce_loss + 0.1*ctc_loss
+    #     # calculate loss
+    #     recon_loss = self.recon_criterion(predicted_noise, noise)
+    #     rec_out = self.ocr_model(x_start)
+    #     input_lengths = torch.IntTensor(x_start.shape[0]*[rec_out.shape[0]])
+    #     ctc_loss = self.ctc_criterion(F.log_softmax(rec_out, dim=2), target, input_lengths, target_lengths)
+    #     high_nce_loss = self.nce_criterion(high_nce_emb, labels=wid)
+    #     low_nce_loss = self.nce_criterion(low_nce_emb, labels=wid)
+    #     loss = recon_loss + high_nce_loss + low_nce_loss + 0.1*ctc_loss
 
-        # backward and update trainable parameters
-        self.optimizer.zero_grad()
-        loss.backward()
-        if cfg.SOLVER.GRAD_L2_CLIP > 0:
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), cfg.SOLVER.GRAD_L2_CLIP)
-        self.optimizer.step()
+    #     # backward and update trainable parameters
+    #     self.optimizer.zero_grad()
+    #     loss.backward()
+    #     if cfg.SOLVER.GRAD_L2_CLIP > 0:
+    #         torch.nn.utils.clip_grad_norm_(self.model.parameters(), cfg.SOLVER.GRAD_L2_CLIP)
+    #     self.optimizer.step()
 
-        if dist.get_rank() == 0:
-            # log file
-            loss_dict = {"reconstruct_loss": recon_loss.item(), "high_nce_loss": high_nce_loss.item(),
-                         "low_nce_loss": low_nce_loss.item(), "ctc_loss": ctc_loss.item()}
-            self.tb_summary.add_scalars("loss", loss_dict, step)
-            self._progress(recon_loss.item(), pbar)
+    #     if dist.get_rank() == 0:
+    #         # log file
+    #         loss_dict = {"reconstruct_loss": recon_loss.item(), "high_nce_loss": high_nce_loss.item(),
+    #                      "low_nce_loss": low_nce_loss.item(), "ctc_loss": ctc_loss.item()}
+    #         self.tb_summary.add_scalars("loss", loss_dict, step)
+    #         self._progress(recon_loss.item(), pbar)
 
-        # del data, loss
-        # torch.cuda.empty_cache()
+    #     # del data, loss
+    #     # torch.cuda.empty_cache()
 
     def _save_images(self, images, path):
         grid = torchvision.utils.make_grid(images)
