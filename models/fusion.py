@@ -114,11 +114,11 @@ class Mix_TR(nn.Module):
         pos_low = pos_style 
         pos_low_feature = self.get_low_style_feature(pos_low)  # pos_low_feature 256, 24, 512
 
-        # pos_low_nce = self.low_pro_mlp(pos_low_feature)
-        # pos_low_nce = torch.mean(pos_low_nce, dim=0)
+        pos_low_nce = self.low_pro_mlp(pos_low_feature)
+        pos_low_nce = torch.mean(pos_low_nce, dim=0)
 
-        # low_nce_emb = torch.stack([anchor_low_nce, pos_low_nce], dim=1) # B 2 C
-        # low_nce_emb = nn.functional.normalize(low_nce_emb, p=2, dim=2)
+        low_nce_emb = torch.stack([anchor_low_nce, pos_low_nce], dim=1) # B 2 C
+        low_nce_emb = nn.functional.normalize(low_nce_emb, p=2, dim=2)
 
 
         # content encoder
@@ -135,8 +135,7 @@ class Mix_TR(nn.Module):
         # hs = self.fre_decoder(style_hs[0], anchor_high_feature, tgt_mask=None)
         #
         # return hs[0].permute(1, 0, 2).contiguous(), high_nce_emb, low_nce_emb # n t c
-        # return style_hs[0].permute(1, 0, 2).contiguous(), low_nce_emb # n t c
-        return style_hs[0].permute(1, 0, 2).contiguous()
+        return style_hs[0].permute(1, 0, 2).contiguous(), low_nce_emb # n t c
 
 
 
