@@ -61,8 +61,8 @@ class Trainer:
         
        
         # predicted_noise, high_nce_emb, low_nce_emb = self.model(x_t, t, style_ref, laplace_ref, content_ref, tag='train')
-        # predicted_noise, low_nce_emb = self.model(x_t, t, style_ref, laplace_ref, content_ref, tag='train')
-        predicted_noise = self.model(x_t, t, style_ref, laplace_ref, content_ref, tag='train')
+        predicted_noise, low_nce_emb = self.model(x_t, t, style_ref, laplace_ref, content_ref, tag='train')
+        # predicted_noise = self.model(x_t, t, style_ref, laplace_ref, content_ref, tag='train')
 
         # calculate loss
         recon_loss = self.recon_criterion(predicted_noise, noise)
@@ -81,10 +81,10 @@ class Trainer:
             # log file
             # loss_dict = {"reconstruct_loss": recon_loss.item(), "high_nce_loss": high_nce_loss.item(),
             #              "low_nce_loss": low_nce_loss.item()}
-            # loss_dict = {"reconstruct_loss": recon_loss.item(),
-            #              "low_nce_loss": low_nce_loss.item()}
-            loss_dict = {"reconstruct_loss": recon_loss.item()
-                         }
+            loss_dict = {"reconstruct_loss": recon_loss.item(),
+                         "low_nce_loss": low_nce_loss.item()}
+            # loss_dict = {"reconstruct_loss": recon_loss.item()
+            #              }
             self.tb_summary.add_scalars("loss", loss_dict, step)
             self._progress(recon_loss.item(), pbar)
 
@@ -162,7 +162,7 @@ class Trainer:
     
         # load_content = ContentData()
         # forward
-        text_path_1 = '/ddnstor/imu_tzj1/ym/Data/crohme2019_diffusion/CROHME_content/test/000/65_alfonso.png'
+        text_path_1 = '../path2/HEMimage.png'
         texts = [text_path_1]
         for text in texts:
             rank = dist.get_rank()
