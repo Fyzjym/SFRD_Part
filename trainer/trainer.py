@@ -67,10 +67,10 @@ class Trainer:
         # calculate loss
         recon_loss = self.recon_criterion(predicted_noise, noise)
         # high_nce_loss = self.nce_criterion(high_nce_emb, labels=wid)
-        # low_nce_loss = self.nce_criterion(low_nce_emb, labels=wid)
+        low_nce_loss = self.nce_criterion(low_nce_emb, labels=wid)
         # loss = recon_loss + high_nce_loss + low_nce_loss
-        # loss = recon_loss + low_nce_loss
-        loss = recon_loss 
+        loss = recon_loss + low_nce_loss
+        # loss = recon_loss 
 
         # backward and update trainable parameters
         self.optimizer.zero_grad()
