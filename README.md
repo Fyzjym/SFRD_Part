@@ -1,3 +1,12 @@
+# News!
+This essay has been accepted!
+
+Any questions can contact wym_datas@163.com.
+
+Looking forward to any friendly exchanges and cooperation.
+
+
+
 # Description
 SFRD: Handwritten Mathematical Expressions Generation by Spatial-Aware Feature Refinement Diffusion
 
